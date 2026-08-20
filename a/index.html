@@ -1262,8 +1262,11 @@ window.storage = (() => {
     log(type, detail) {
       const entry = Object.assign({ at: new Date().toISOString(), sid: SID, type }, detail || {});
       write(read().concat([entry]).slice(-LIMIT));
-      /* same event, sent on to Google Analytics when it is configured */
-      if (typeof window.gtag === "function") {
+      /* Same event, sent on to Google Analytics when it is configured.
+         session_start is skipped: GA4 reserves that name and counts sessions
+         itself, so sending our own would be dropped anyway. The local log
+         still keeps it, since the rates below are per session. */
+      if (type !== "session_start" && typeof window.gtag === "function") {
         try {
           window.gtag("event", type, Object.assign({ variant: VARIANT }, detail || {}));
         } catch (e) { /* analytics must never break the page */ }
