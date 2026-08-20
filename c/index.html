@@ -1159,7 +1159,9 @@ window.storage = (() => {
         anyInteractionRate: rate(anyS),
 
         calendarClicks: count("calendar_click"),
+        calendarByKind: top(events.filter((e) => e.type === "calendar_click"), "kind", 3),
         mapClicks: count("map_click"),
+        mapByKind: top(events.filter((e) => e.type === "map_click"), "kind", 3),
         exhibitionClicks: count("exhibition_click"),
         detailLinkClicks: count("exhibition_detail_click"),
         exhibitionClicksPerSession: sessions
@@ -1495,6 +1497,7 @@ function paintCalendar() {
       b.addEventListener("click", () => {
         togglePick(selectedDates, selectedVenues, key, CONFIG.dateMode);
         window.storage.log("calendar_click", {
+          kind: "date",
           date: key,
           selected: selectedDates.has(key),
           showsOnDate: n,
@@ -1526,6 +1529,12 @@ function buildTimeRow() {
     b.addEventListener("click", () => {
       if (selectedHours.has(h)) selectedHours.delete(h);
       else selectedHours.add(h);
+      window.storage.log("calendar_click", {
+        kind: "hour",
+        hour: h,
+        selected: selectedHours.has(h),
+        selectedCount: selectedHours.size
+      });
       render();
     });
     slots.appendChild(b);
@@ -1680,6 +1689,7 @@ function drawPins() {
         const turningOn = !selectedVenues.has(vn.key);
         togglePick(selectedVenues, selectedDates, vn.key, CONFIG.venueMode);
         window.storage.log("map_click", {
+          kind: "place",
           venue: vn.name,
           venueKey: vn.key,
           shows: vn.shows.length,
@@ -1880,6 +1890,12 @@ function buildMap() {
         const ref = b.dataset.ref;
         if (selectedLines.has(ref)) selectedLines.delete(ref);
         else selectedLines.add(ref);
+        window.storage.log("map_click", {
+          kind: "line",
+          line: ref,
+          selected: selectedLines.has(ref),
+          nearby: nearLine.get(ref) ? nearLine.get(ref).size : 0
+        });
         render();
       });
     });
