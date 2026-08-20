@@ -771,7 +771,12 @@
   /* ---------- detail ---------- */
 
   dialog.detail {
-    position: relative;
+    /* pinned to the viewport: a dialog left in normal flow sits at the top of
+       the document, so opening it scrolls the grid away and the reader loses
+       their place when they come back */
+    position: fixed;
+    inset: 0;
+    margin: auto;
     width: min(960px, calc(100vw - 32px));
     max-height: calc(100vh - 48px);
     padding: 0;
