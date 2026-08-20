@@ -368,6 +368,9 @@
     border-top: 1px solid var(--rule);
   }
 
+  /* display:flex above outranks the browser's [hidden] rule, so say it here */
+  .time-row[hidden] { display: none; }
+
   .time-label {
     flex: none;
     padding-top: 5px;
