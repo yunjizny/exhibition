@@ -1142,7 +1142,8 @@ window.storage = (() => {
 
       const calS = sessionsWith(events, "calendar_click");
       const mapS = sessionsWith(events, "map_click");
-      const detS = sessionsWith(events, "detail_open");
+      const detS = sessionsWith(events, "exhibition_click");
+      const linkS = sessionsWith(events, "exhibition_detail_click");
       const anyS = new Set(events.filter((e) => e.type !== "session_start").map((e) => e.sid)).size;
 
       return {
@@ -1153,15 +1154,18 @@ window.storage = (() => {
 
         calendarClickRate: rate(calS),
         mapClickRate: rate(mapS),
-        detailOpenRate: rate(detS),
+        exhibitionClickRate: rate(detS),
+        detailLinkRate: rate(linkS),
         anyInteractionRate: rate(anyS),
 
         calendarClicks: count("calendar_click"),
         mapClicks: count("map_click"),
-        detailOpens: count("detail_open"),
-        detailOpensPerSession: sessions ? +(count("detail_open") / sessions).toFixed(2) : 0,
+        exhibitionClicks: count("exhibition_click"),
+        detailLinkClicks: count("exhibition_detail_click"),
+        exhibitionClicksPerSession: sessions
+          ? +(count("exhibition_click") / sessions).toFixed(2) : 0,
 
-        topExhibitions: top(events.filter((e) => e.type === "detail_open"), "name", 5),
+        topExhibitions: top(events.filter((e) => e.type === "exhibition_click"), "name", 5),
         topVenues: top(events.filter((e) => e.type === "map_click" && e.selected), "venue", 5),
         topDates: top(events.filter((e) => e.type === "calendar_click" && e.selected), "date", 5)
       };
@@ -1175,8 +1179,9 @@ window.storage = (() => {
       console.table([
         { 항목: "달력 클릭",   "세션 대비": s.calendarClickRate + "%", 클릭수: s.calendarClicks },
         { 항목: "지도 클릭",   "세션 대비": s.mapClickRate + "%",      클릭수: s.mapClicks },
-        { 항목: "상세 진입",   "세션 대비": s.detailOpenRate + "%",    클릭수: s.detailOpens },
-        { 항목: "아무 상호작용", "세션 대비": s.anyInteractionRate + "%", 클릭수: "-" }
+        { 항목: "전시 클릭",   "세션 대비": s.exhibitionClickRate + "%", 클릭수: s.exhibitionClicks },
+        { 항목: "세부내용 클릭", "세션 대비": s.detailLinkRate + "%",      클릭수: s.detailLinkClicks },
+        { 항목: "아무 상호작용", "세션 대비": s.anyInteractionRate + "%",  클릭수: "-" }
       ]);
       if (s.topExhibitions.length) { console.log("많이 본 전시"); console.table(s.topExhibitions); }
       if (s.topVenues.length) { console.log("많이 고른 장소"); console.table(s.topVenues); }
@@ -1521,11 +1526,6 @@ function buildTimeRow() {
     b.addEventListener("click", () => {
       if (selectedHours.has(h)) selectedHours.delete(h);
       else selectedHours.add(h);
-      window.storage.log("time_click", {
-        hour: h,
-        selected: selectedHours.has(h),
-        selectedCount: selectedHours.size
-      });
       render();
     });
     slots.appendChild(b);
@@ -1880,7 +1880,6 @@ function buildMap() {
         const ref = b.dataset.ref;
         if (selectedLines.has(ref)) selectedLines.delete(ref);
         else selectedLines.add(ref);
-        window.storage.log("metro_click", { line: ref, selected: selectedLines.has(ref) });
         render();
       });
     });
@@ -1903,7 +1902,7 @@ function openDetail(id, via) {
   const st = statusOf(s);
   const idx = view.findIndex((x) => x.id === id);
 
-  window.storage.log("detail_open", {
+  window.storage.log("exhibition_click", {
     id: s.id,
     name: s.name,
     venue: s.venue.trim(),
@@ -1955,6 +1954,18 @@ function openDetail(id, via) {
         '<span class="navbtn" style="border:none;color:var(--ink-3)">' + (idx + 1) + " / " + view.length + '</span>' +
       '</div>' +
     '</div>';
+
+  /* leaving for the venue's own page — the strongest signal of intent */
+  detailBody.querySelectorAll(".links a").forEach((a) => {
+    a.addEventListener("click", () => {
+      window.storage.log("exhibition_detail_click", {
+        id: s.id,
+        name: s.name,
+        label: a.textContent.replace(/\s*↗\s*$/, ""),
+        url: a.href
+      });
+    });
+  });
 
   const prev = detailBody.querySelector("#prev");
   const next = detailBody.querySelector("#next");
